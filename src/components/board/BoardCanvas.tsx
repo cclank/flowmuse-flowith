@@ -4,16 +4,17 @@ import {
   Background,
   Controls,
   MiniMap,
-  OnNodesChange,
-  OnEdgesChange,
-  OnConnect,
-  NodeTypes,
+  type OnNodesChange,
+  type OnEdgesChange,
+  type OnConnect,
+  type NodeTypes,
 } from '@xyflow/react';
 import type { Node, Edge } from '@shared/types';
 import { NodeCard } from './NodeCard';
 import '@xyflow/react/dist/style.css';
 import { BrainCircuit } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 interface BoardCanvasProps {
   nodes: Node[];
   edges: Edge[];
@@ -34,7 +35,16 @@ export function BoardCanvas({ nodes, edges, onNodesChange, onEdgesChange, onConn
         >
           <BrainCircuit className="mx-auto h-12 w-12 text-muted-foreground/50" />
           <p className="mt-4 font-medium">Your canvas is empty.</p>
-          <p className="text-sm">Drag nodes from the left panel to start building.</p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p className="text-sm">Drag nodes from the left panel to start building.</p>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Use the Node Library to add new elements.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </motion.div>
       </div>
     );
@@ -55,7 +65,7 @@ export function BoardCanvas({ nodes, edges, onNodesChange, onEdgesChange, onConn
       >
         <Background gap={30} />
         <Controls />
-        <MiniMap nodeStrokeWidth={3} zoomable pannable />
+        <MiniMap nodeStrokeWidth={3} zoomable pannable nodeColor={(node) => node.data?.color ?? 'hsl(var(--brand-primary))'} />
       </ReactFlow>
     </div>
   );

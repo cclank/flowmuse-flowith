@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Toaster } from '@/components/ui/sonner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 export function SettingsPage() {
   const { isDark, toggleTheme } = useTheme();
   const handleResetData = async () => {
@@ -40,8 +41,8 @@ export function SettingsPage() {
               <TabsTrigger value="preferences">Preferences</TabsTrigger>
               <TabsTrigger value="about">About</TabsTrigger>
             </TabsList>
-            <TabsContent value="preferences" className="mt-6">
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+              <TabsContent value="preferences" className="mt-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>Appearance</CardTitle>
@@ -57,16 +58,23 @@ export function SettingsPage() {
                         <Label className="font-medium">Reset Demo Data</Label>
                         <p className="text-sm text-muted-foreground">Restore the initial mock boards and nodes.</p>
                       </div>
-                      <Button variant="outline" onClick={handleResetData}>
-                        <RefreshCw className="mr-2 h-4 w-4" /> Reset
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline" onClick={handleResetData}>
+                              <RefreshCw className="mr-2 h-4 w-4" /> Reset
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Reseeds the application with mock boards.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </CardContent>
                 </Card>
-              </motion.div>
-            </TabsContent>
-            <TabsContent value="about" className="mt-6">
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              </TabsContent>
+              <TabsContent value="about" className="mt-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>About FlowMuse</CardTitle>
@@ -79,8 +87,8 @@ export function SettingsPage() {
                     <p>Built with ❤️ at Cloudflare</p>
                   </CardContent>
                 </Card>
-              </motion.div>
-            </TabsContent>
+              </TabsContent>
+            </motion.div>
           </Tabs>
         </div>
       </div>

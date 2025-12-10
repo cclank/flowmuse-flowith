@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BoardCanvas } from '@/components/board/BoardCanvas';
 import { useBoard, useSaveBoard } from '@/lib/api-boards';
 import { Toaster, toast } from 'sonner';
-import { applyNodeChanges, applyEdgeChanges, addEdge, OnNodesChange, OnEdgesChange, OnConnect } from '@xyflow/react';
+import { applyNodeChanges, applyEdgeChanges, addEdge, type OnNodesChange, type OnEdgesChange, type OnConnect } from '@xyflow/react';
 import type { Node, Edge, NodeData } from '@shared/types';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,6 +23,8 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import * as Lucide from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 const iconOptions = [
   { value: 'FileText', label: 'Text', icon: FileText },
   { value: 'Users', label: 'Users', icon: Users },
@@ -55,25 +57,25 @@ export function BoardEditor() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
-  const [history, setHistory] = useState<{ nodes: Node[]; edges: Edge[] }[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(0);
+  const historyRef = useRef<{ nodes: Node[]; edges: Edge[] }[]>([]);
+  const historyIndexRef = useRef(0);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (board) {
       setNodes(board.nodes);
       setEdges(board.edges);
       const initialHistory = [{ nodes: board.nodes, edges: board.edges }];
-      setHistory(initialHistory);
-      setHistoryIndex(0);
+      historyRef.current = initialHistory;
+      historyIndexRef.current = 0;
     }
   }, [board]);
   const updateHistory = useCallback((newNodes: Node[], newEdges: Edge[]) => {
     const newHistoryEntry = { nodes: newNodes, edges: newEdges };
-    const currentHistory = history.slice(0, historyIndex + 1);
+    const currentHistory = historyRef.current.slice(0, historyIndexRef.current + 1);
     const updatedHistory = [...currentHistory, newHistoryEntry].slice(-20); // Limit history size
-    setHistory(updatedHistory);
-    setHistoryIndex(updatedHistory.length - 1);
-  }, [history, historyIndex]);
+    historyRef.current = updatedHistory;
+    historyIndexRef.current = updatedHistory.length - 1;
+  }, []);
   const onNodesChange: OnNodesChange = useCallback((changes) => {
     setNodes((nds) => {
       const newNodes = applyNodeChanges(changes, nds) as Node[];
@@ -101,19 +103,19 @@ export function BoardEditor() {
     });
   }, [nodes, updateHistory]);
   const handleUndo = () => {
-    if (historyIndex > 0) {
-      const newIndex = historyIndex - 1;
-      setHistoryIndex(newIndex);
-      setNodes(history[newIndex].nodes);
-      setEdges(history[newIndex].edges);
+    if (historyIndexRef.current > 0) {
+      historyIndexRef.current -= 1;
+      const prevState = historyRef.current[historyIndexRef.current];
+      setNodes(prevState.nodes);
+      setEdges(prevState.edges);
     }
   };
   const handleRedo = () => {
-    if (historyIndex < history.length - 1) {
-      const newIndex = historyIndex + 1;
-      setHistoryIndex(newIndex);
-      setNodes(history[newIndex].nodes);
-      setEdges(history[newIndex].edges);
+    if (historyIndexRef.current < historyRef.current.length - 1) {
+      historyIndexRef.current += 1;
+      const nextState = historyRef.current[historyIndexRef.current];
+      setNodes(nextState.nodes);
+      setEdges(nextState.edges);
     }
   };
   const handleSave = () => {
@@ -140,7 +142,7 @@ export function BoardEditor() {
       const newNode: Node = {
         id: uuidv4(),
         type: 'custom',
-        position: { x: pointerEvent.clientX - left - 75, y: pointerEvent.clientY - top - 25 },
+        position: { x: (pointerEvent?.clientX ?? 0) - left - 75, y: (pointerEvent?.clientY ?? 0) - top - 25 },
         data: { title: 'New Node', icon: 'FileText', content: 'Edit me!' },
       };
       const newNodes = [...nodes, newNode];
@@ -205,8 +207,8 @@ export function BoardEditor() {
             <h1 className="text-lg font-semibold">{board.title}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={handleUndo} disabled={historyIndex <= 0}><Undo className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" onClick={handleRedo} disabled={historyIndex >= history.length - 1}><Redo className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={handleUndo}><Undo className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={handleRedo}><Redo className="h-4 w-4" /></Button>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleShare}><Copy className="h-4 w-4 mr-2" /> Share</Button>
@@ -219,10 +221,18 @@ export function BoardEditor() {
                 <DropdownMenuItem onClick={handleExportJSON}>as JSON</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button size="sm" onClick={handleSave} disabled={saveBoardMutation.isPending}>
-              {saveBoardMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-              Save
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" disabled={saveBoardMutation.isPending}>
+                  {saveBoardMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                  Save
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader><AlertDialogTitle>Confirm Save</AlertDialogTitle><AlertDialogDescription>Are you sure you want to save your changes?</AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleSave}>Save</AlertDialogAction></AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </header>
         <main className="flex-1 min-h-0">
@@ -246,49 +256,69 @@ export function BoardEditor() {
             <ResizablePanel defaultSize={20} minSize={15} maxSize={25} className="bg-background p-4">
               <div className="flex flex-col h-full">
                 <h2 className="text-md font-semibold mb-4">Inspector</h2>
-                {selectedNode ? (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium">Title</label>
-                      <Input value={selectedNode.data.title || ''} onChange={e => updateSelectedNodeData({ title: e.target.value })} />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Content</label>
-                      <Textarea value={selectedNode.data.content || ''} onChange={e => updateSelectedNodeData({ content: e.target.value })} />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Icon</label>
-                      <Select value={selectedNode.data.icon} onValueChange={(v) => updateSelectedNodeData({ icon: v as keyof typeof Lucide })}>
-                        <SelectTrigger><SelectValue placeholder="Select an icon" /></SelectTrigger>
-                        <SelectContent>
-                          {iconOptions.map(({ value, label, icon: Icon }) => (
-                            <SelectItem key={value} value={value}>
-                              <div className="flex items-center gap-2"><Icon className="h-4 w-4" /> {label}</div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Color</label>
-                      <Input type="color" value={selectedNode.data.color || '#ffffff'} onChange={e => updateSelectedNodeData({ color: e.target.value })} className="p-1 h-10" />
-                    </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm" className="w-full mt-4"><Trash2 className="h-4 w-4 mr-2" /> Delete Node</Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the selected node.</AlertDialogDescription></AlertDialogHeader>
-                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={deleteSelectedNode}>Delete</AlertDialogAction></AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-sm text-muted-foreground text-center">
-                    <Settings className="h-8 w-8 mb-2" />
-                    <p>Select a node to see its properties.</p>
-                  </div>
-                )}
+                <AnimatePresence mode="wait">
+                  {selectedNode ? (
+                    <motion.div
+                      key={selectedNode.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 10 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-4"
+                    >
+                      <div>
+                        <label className="text-sm font-medium">Title</label>
+                        <Input value={selectedNode.data.title || ''} onChange={e => updateSelectedNodeData({ title: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Content</label>
+                        <Textarea value={selectedNode.data.content || ''} onChange={e => updateSelectedNodeData({ content: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Icon</label>
+                        <Select value={selectedNode.data.icon} onValueChange={(v) => updateSelectedNodeData({ icon: v as keyof typeof Lucide })}>
+                          <SelectTrigger><SelectValue placeholder="Select an icon" /></SelectTrigger>
+                          <SelectContent>
+                            {iconOptions.map(({ value, label, icon: Icon }) => (
+                              <SelectItem key={value} value={value}>
+                                <div className="flex items-center gap-2"><Icon className="h-4 w-4" /> {label}</div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Color</label>
+                        <Input type="color" value={selectedNode.data.color || '#ffffff'} onChange={e => updateSelectedNodeData({ color: e.target.value })} className="p-1 h-10" />
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm" className="w-full mt-4"><Trash2 className="h-4 w-4 mr-2" /> Delete Node</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the selected node.</AlertDialogDescription></AlertDialogHeader>
+                          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={deleteSelectedNode}>Delete</AlertDialogAction></AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="empty-inspector"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex-1 flex flex-col items-center justify-center text-sm text-muted-foreground text-center"
+                    >
+                      <Settings className="h-8 w-8 mb-2" />
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild><p>Select a node to see its properties.</p></TooltipTrigger>
+                          <TooltipContent><p>Click on any node on the canvas.</p></TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>

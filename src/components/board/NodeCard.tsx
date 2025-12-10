@@ -1,27 +1,26 @@
 import React from 'react';
-import { Handle, Position, NodeProps } from '@xyflow/react';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
 import * as Lucide from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import type { NodeData } from '@shared/types';
+import type { Node, NodeData } from '@shared/types';
 import { motion } from 'framer-motion';
 const Icon = ({ name, ...props }: { name: keyof typeof Lucide } & Lucide.LucideProps) => {
-  const LucideIcon = Lucide[name];
-  // A simple check to see if it's a renderable component
-  if (!LucideIcon || typeof LucideIcon === 'string' || !('render' in LucideIcon)) {
+  const LucideIcon = Lucide[name] as React.ComponentType<Lucide.LucideProps> | undefined;
+  if (!LucideIcon) {
     return <Lucide.HelpCircle {...props} />; // Fallback icon
   }
   return <LucideIcon {...props} />;
 };
-export function NodeCard({ data, selected, id }: NodeProps<NodeData>) {
+export function NodeCard({ data, selected, id }: NodeProps<Node<NodeData>>) {
   return (
-    <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.1 }}>
+    <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.1 }}>
       <Card
         className={cn(
           'w-60 shadow-md transition-all duration-150 border-2 hover:shadow-xl',
-          selected ? 'border-brand-primary shadow-lg ring-2 ring-brand-primary/50 ring-offset-2' : 'border-transparent'
+          selected ? 'border-brand-primary shadow-lg ring-2 ring-brand-primary/50 ring-offset-background ring-offset-2' : 'border-transparent'
         )}
-        style={{ backgroundColor: data?.color || 'hsl(var(--card))' }}
+        style={{ backgroundColor: data?.color ?? 'hsl(var(--card))' }}
       >
         <Handle type="target" position={Position.Top} id={`${id}-top`} className="!w-3 !h-3" />
         <CardHeader className="p-3">

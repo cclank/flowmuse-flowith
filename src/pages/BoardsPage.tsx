@@ -18,6 +18,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Toaster } from 'sonner';
 import { motion } from 'framer-motion';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
   useEffect(() => {
@@ -91,7 +92,7 @@ function BoardCard({ board }: { board: Board }) {
   const navigate = useNavigate();
   const deleteBoardMutation = useDeleteBoard();
   return (
-    <motion.div whileHover={{ scale: 1.03, y: -5 }} transition={{ duration: 0.2 }}>
+    <motion.div whileHover={{ scale: 1.03, y: -5, boxShadow: '0 10px 25px -5px hsl(var(--brand-primary)/0.2)' }} transition={{ duration: 0.2 }}>
       <Card className="h-full flex flex-col group shadow-sm hover:shadow-xl transition-shadow duration-200">
         <CardHeader className="flex-row items-start justify-between">
           <CardTitle className="text-lg font-semibold pr-2">{board.title}</CardTitle>
@@ -190,9 +191,18 @@ function EmptyState() {
     <div className="text-center py-20 border-2 border-dashed rounded-lg">
       <h3 className="text-xl font-semibold text-foreground">No boards yet</h3>
       <p className="text-muted-foreground mt-2 mb-4">Get started by creating your first board.</p>
-      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-        <CreateBoardDialog />
-      </motion.div>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <CreateBoardDialog />
+            </motion.div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Start your first flowchart</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 }

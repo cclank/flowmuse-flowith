@@ -1,5 +1,5 @@
-import type { LucideIcon } from 'lucide-react';
 import type { Node as RFNode, Edge as RFEdge } from '@xyflow/react';
+import * as Lucide from 'lucide-react';
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -24,7 +24,7 @@ export interface ChatMessage {
 // FlowMuse Types
 export interface NodeData {
   title?: string;
-  icon?: keyof typeof import('lucide-react');
+  icon?: keyof typeof Lucide;
   content?: string;
   color?: string;
   [key: string]: unknown; // Index signature for compatibility with react-flow

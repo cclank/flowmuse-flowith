@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 export function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground overflow-hidden">
@@ -15,9 +16,24 @@ export function HomePage() {
           <div className="py-16 md:py-24 lg:py-32 text-center relative">
             {/* Background Gradient Mesh */}
             <div className="absolute inset-0 -z-10 overflow-hidden">
-              <div className="absolute top-0 -left-4 w-72 h-72 bg-brand-primary-light dark:bg-brand-primary-light rounded-full filter blur-3xl opacity-50 animate-blob"></div>
-              <div className="absolute top-0 -right-4 w-72 h-72 bg-brand-accent-light dark:bg-brand-accent-light rounded-full filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
-              <div className="absolute -bottom-8 left-20 w-72 h-72 bg-brand-primary-light dark:bg-brand-primary-light rounded-full filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 1.5, delay: 0.2 }}
+                className="absolute top-0 -left-4 w-72 h-72 bg-brand-primary-light dark:bg-brand-primary-light rounded-full filter blur-3xl opacity-50 animate-blob"
+              ></motion.div>
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 1.5, delay: 0.4 }}
+                className="absolute top-0 -right-4 w-72 h-72 bg-brand-accent-light dark:bg-brand-accent-light rounded-full filter blur-3xl opacity-50 animate-blob animation-delay-2000"
+              ></motion.div>
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 1.5, delay: 0.6 }}
+                className="absolute -bottom-8 left-20 w-72 h-72 bg-brand-primary-light dark:bg-brand-primary-light rounded-full filter blur-3xl opacity-50 animate-blob animation-delay-4000"
+              ></motion.div>
             </div>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -41,11 +57,20 @@ export function HomePage() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="mt-10 flex justify-center items-center gap-x-6"
             >
-              <Button asChild size="lg" className="shadow-lg hover:shadow-xl transition-shadow bg-brand-primary hover:bg-brand-primary/90 text-white">
-                <Link to="/boards">
-                  Create a Board <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button asChild size="lg" className="shadow-lg hover:shadow-xl transition-shadow bg-brand-primary hover:bg-brand-primary/90 text-white">
+                      <Link to="/boards">
+                        Create a Board <ArrowRight className="ml-2 h-5 w-5" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Begin creating flows</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <Button asChild variant="outline" size="lg">
                 <a href="https://github.com/Cloudflare-Engineer/flowmuse" target="_blank" rel="noopener noreferrer">
                   View on GitHub
@@ -68,7 +93,7 @@ export function HomePage() {
         </div>
       </main>
       <footer className="py-6 text-center text-sm text-muted-foreground">
-        <p>Built with ❤�� at Cloudflare</p>
+        <p>Built with ❤️ at Cloudflare</p>
       </footer>
     </div>
   );
