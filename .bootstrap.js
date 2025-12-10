@@ -81,7 +81,8 @@ function runSetupCommands() {
     "bun add react-intersection-observer@^9.4.0",
     "bun install @xyflow/react",
     "bun add react-resizable-panels@^3.0.3",
-    "bun add html2canvas@^1.4.1"
+    "bun add html2canvas@^1.4.1",
+    "bun add html2canvas uuid"
 ];
     
     if (commands.length === 0) {
