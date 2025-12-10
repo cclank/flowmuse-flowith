@@ -1,148 +1,74 @@
-// Home page of the app, Currently a demo page for demonstration.
-// Please rewrite this file to implement your own logic. Do not delete it to use some other file as homepage. Simply replace the entire contents of this file.
-import { useEffect } from 'react'
-import { Sparkles } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { ThemeToggle } from '@/components/ThemeToggle'
-import { Toaster, toast } from '@/components/ui/sonner'
-import { create } from 'zustand'
-import { useShallow } from 'zustand/react/shallow'
-// import { AppLayout } from '@/components/layout/AppLayout'
-
-// Timer store: independent slice with a clear, minimal API, for demonstration
-type TimerState = {
-  isRunning: boolean;
-  elapsedMs: number;
-  start: () => void;
-  pause: () => void;
-  reset: () => void;
-  tick: (deltaMs: number) => void;
-}
-
-const useTimerStore = create<TimerState>((set) => ({
-  isRunning: false,
-  elapsedMs: 0,
-  start: () => set({ isRunning: true }),
-  pause: () => set({ isRunning: false }),
-  reset: () => set({ elapsedMs: 0, isRunning: false }),
-  tick: (deltaMs) => set((s) => ({ elapsedMs: s.elapsedMs + deltaMs })),
-}))
-
-// Counter store: separate slice to showcase multiple stores without coupling
-type CounterState = {
-  count: number;
-  inc: () => void;
-  reset: () => void;
-}
-
-const useCounterStore = create<CounterState>((set) => ({
-  count: 0,
-  inc: () => set((s) => ({ count: s.count + 1 })),
-  reset: () => set({ count: 0 }),
-}))
-
-function formatDuration(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000))
-  const m = Math.floor(total / 60)
-  const s = total % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
-}
-
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, BrainCircuit, GitFork } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { Badge } from '@/components/ui/badge';
 export function HomePage() {
-  // Select only what is needed to avoid unnecessary re-renders
-  const { isRunning, elapsedMs } = useTimerStore(
-    useShallow((s) => ({ isRunning: s.isRunning, elapsedMs: s.elapsedMs })),
-  )
-  const start = useTimerStore((s) => s.start)
-  const pause = useTimerStore((s) => s.pause)
-  const resetTimer = useTimerStore((s) => s.reset)
-  const count = useCounterStore((s) => s.count)
-  const inc = useCounterStore((s) => s.inc)
-  const resetCount = useCounterStore((s) => s.reset)
-
-  // Drive the timer only while running; avoid update-depth issues with a scoped RAF
-  useEffect(() => {
-    if (!isRunning) return
-    let raf = 0
-    let last = performance.now()
-    const loop = () => {
-      const now = performance.now()
-      const delta = now - last
-      last = now
-      // Read store API directly to keep effect deps minimal and stable
-      useTimerStore.getState().tick(delta)
-      raf = requestAnimationFrame(loop)
-    }
-    raf = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(raf)
-  }, [isRunning])
-
-  const onPleaseWait = () => {
-    inc()
-    if (!isRunning) {
-      start()
-      toast.success('Building your app…', {
-        description: 'Hang tight, we\'re setting everything up.',
-      })
-    } else {
-      pause()
-      toast.info('Taking a short pause', {
-        description: 'We\'ll continue shortly.',
-      })
-    }
-  }
-
-  const formatted = formatDuration(elapsedMs)
-
   return (
-    // <AppLayout> Uncomment this if you want to use the sidebar
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4 overflow-hidden relative">
-        <ThemeToggle />
-        <div className="absolute inset-0 bg-gradient-rainbow opacity-10 dark:opacity-20 pointer-events-none" />
-        <div className="text-center space-y-8 relative z-10 animate-fade-in">
-          <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-primary floating">
-              <Sparkles className="w-8 h-8 text-white rotating" />
+    <div className="min-h-screen flex flex-col bg-background text-foreground overflow-hidden">
+      <ThemeToggle className="fixed top-4 right-4 z-50" />
+      <main className="flex-1 flex flex-col items-center justify-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-16 md:py-24 lg:py-32 text-center relative">
+            {/* Background Gradient Mesh */}
+            <div className="absolute inset-0 -z-10 overflow-hidden">
+              <div className="absolute top-0 left-0 w-96 h-96 bg-brand-primary-light dark:bg-brand-primary-light rounded-full filter blur-3xl opacity-30 animate-blob"></div>
+              <div className="absolute top-1/2 right-0 w-96 h-96 bg-brand-accent-light dark:bg-brand-accent-light rounded-full filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+              <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-brand-primary-light dark:bg-brand-primary-light rounded-full filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
             </div>
-          </div>
-          <h1 className="text-5xl md:text-7xl font-display font-bold text-balance leading-tight">
-            Creating your <span className="text-gradient">app</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto text-pretty">
-            Your application would be ready soon.
-          </p>
-          <div className="flex justify-center gap-4">
-            <Button 
-              size="lg"
-              onClick={onPleaseWait}
-              className="btn-gradient px-8 py-4 text-lg font-semibold hover:-translate-y-0.5 transition-all duration-200"
-              aria-live="polite"
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
             >
-              Please Wait
-            </Button>
-          </div>
-          <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
-            <div>
-              Time elapsed: <span className="font-medium tabular-nums text-foreground">{formatted}</span>
-            </div>
-            <div>
-              Coins: <span className="font-medium tabular-nums text-foreground">{count}</span>
-            </div>
-          </div>
-          <div className="flex justify-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => { resetTimer(); resetCount(); toast('Reset complete') }}>
-              Reset
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => { inc(); toast('Coin added') }}>
-              Add Coin
-            </Button>
+              <Badge variant="outline" className="mb-4 text-sm font-medium py-1 px-3">
+                <GitFork className="w-4 h-4 mr-2" />
+                Flowith Style Demo
+              </Badge>
+              <h1 className="text-5xl md:text-7xl font-bold text-foreground tracking-tight text-balance">
+                Craft Aesthetic Flowcharts with <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F38020] to-[#764BA2]">FlowMuse</span>
+              </h1>
+              <p className="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground text-balance">
+                A visually-driven canvas for your ideas. Inspired by the elegance of Flowith, this is a demonstration of what's possible.
+              </p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="mt-10 flex justify-center items-center gap-x-6"
+            >
+              <Button asChild size="lg" className="shadow-lg hover:shadow-xl transition-shadow">
+                <Link to="/boards">
+                  Create a Board <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <a href="https://github.com/your-repo/flowmuse" target="_blank" rel="noopener noreferrer">
+                  View on GitHub
+                </a>
+              </Button>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="mt-16 max-w-3xl mx-auto"
+            >
+              <div className="p-4 border rounded-lg bg-card/50 backdrop-blur-sm">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-semibold text-foreground">Disclaimer:</span> This website is a technical demonstration and a visual tribute inspired by <a href="https://flowith.me/" target="_blank" rel="noopener noreferrer" className="underline hover:text-brand-primary">Flowith</a>. It is not affiliated with, endorsed by, or connected to the official Flowith product or its creators.
+                </p>
+              </div>
+            </motion.div>
           </div>
         </div>
-        <footer className="absolute bottom-8 text-center text-muted-foreground/80">
-          <p>Powered by Cloudflare</p>
-        </footer>
-        <Toaster richColors closeButton />
-      </div>
-    // </AppLayout> Uncomment this if you want to use the sidebar
-  )
+      </main>
+      <footer className="py-6 text-center text-sm text-muted-foreground">
+        <p>Built with ❤️ at Cloudflare</p>
+      </footer>
+    </div>
+  );
 }
