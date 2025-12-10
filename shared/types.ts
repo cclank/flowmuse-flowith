@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
+import type { Node as RFNode, Edge as RFEdge } from '@xyflow/react';
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -26,19 +27,11 @@ export interface NodeData {
   icon?: keyof typeof import('lucide-react');
   content?: string;
   color?: string;
+  [key: string]: unknown; // Index signature for compatibility with react-flow
 }
-export interface Node {
-  id: string;
-  type: string;
-  position: { x: number; y: number };
-  data: NodeData;
-}
-export interface Edge {
-  id: string;
-  source: string;
-  target: string;
-  animated?: boolean;
-}
+// Extend react-flow types for type safety
+export interface Node extends RFNode<NodeData> {}
+export interface Edge extends RFEdge {}
 export interface Board {
   id: string;
   title: string;

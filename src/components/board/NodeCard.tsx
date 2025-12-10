@@ -1,16 +1,19 @@
 import React from 'react';
-import { Handle, Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import { Handle, Position, NodeProps } from '@xyflow/react';
 import * as Lucide from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { NodeData } from '@shared/types';
 const Icon = ({ name, ...props }: { name: keyof typeof Lucide } & Lucide.LucideProps) => {
-  const LucideIcon = Lucide[name as keyof typeof Lucide];
-  if (!LucideIcon || typeof LucideIcon === 'function' && !('render' in LucideIcon)) {
+  const LucideIcon = Lucide[name];
+  if (!LucideIcon || typeof LucideIcon === 'string') {
     return null;
   }
-  return <LucideIcon {...props} />;
+  // A simple check to see if it's a renderable component
+  if ('render' in LucideIcon || LucideIcon[Symbol.for('react.forward_ref')]) {
+     return <LucideIcon {...props} />;
+  }
+  return null;
 };
 export function NodeCard({ data, selected }: NodeProps<NodeData>) {
   return (
@@ -19,16 +22,16 @@ export function NodeCard({ data, selected }: NodeProps<NodeData>) {
         'w-60 shadow-md transition-all duration-150 border-2 hover:shadow-xl hover:scale-[1.02]',
         selected ? 'border-brand-primary shadow-lg ring-2 ring-brand-primary ring-offset-2' : 'border-transparent'
       )}
-      style={{ backgroundColor: data.color }}
+      style={{ backgroundColor: data?.color || 'hsl(var(--card))' }}
     >
       <Handle type="target" position={Position.Top} className="!w-3 !h-3" />
       <CardHeader className="p-3">
         <CardTitle className="flex items-center gap-2 text-sm font-medium">
-          {data.icon && <Icon name={data.icon} className="w-4 h-4 text-muted-foreground" />}
-          <span>{data.title}</span>
+          {data?.icon && <Icon name={data.icon} className="w-4 h-4 text-muted-foreground" />}
+          <span>{data?.title}</span>
         </CardTitle>
       </CardHeader>
-      {data.content && (
+      {data?.content && (
         <CardContent className="p-3 pt-0 text-xs text-muted-foreground">
           {data.content}
         </CardContent>
