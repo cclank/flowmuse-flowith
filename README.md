@@ -2,7 +2,7 @@
 
 FlowMuse — 美学流程画板（Flowith 风格演示）
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cclank/flowmuse-flowith)
 
 ## Overview
 
@@ -156,7 +156,7 @@ Deploy to Cloudflare Workers for global edge distribution with Durable Objects f
 
 The frontend assets are served via Cloudflare Pages/Pages integration, while the Worker handles API routes. Bindings are pre-configured in `wrangler.jsonc` (do not modify).
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cclank/flowmuse-flowith)
 
 After deployment, access your app at the provided Cloudflare URL. For custom domains, configure via Wrangler or dashboard.
 
