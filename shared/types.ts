@@ -23,15 +23,15 @@ export interface ChatMessage {
 }
 // FlowMuse Types
 export interface NodeData {
-  title: string;
+  title?: string;
   icon?: keyof typeof import('lucide-react');
   content?: string;
   color?: string;
   [key: string]: unknown; // Index signature for compatibility with react-flow
 }
 // Extend react-flow types for type safety
-export interface Node extends RFNode<NodeData> {}
-export interface Edge extends RFEdge {}
+export type Node = RFNode<NodeData>;
+export type Edge = RFEdge;
 export interface Board {
   id: string;
   title: string;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Save, Undo, Redo, Download, Share2, Plus, Palette, Settings, Loader2, Trash2, Copy
+  ArrowLeft, Save, Undo, Redo, Download, Copy, Plus, Palette, Settings, Loader2, Trash2, FileText, Users, Code, Sparkles, Share2, Move, HelpCircle
 } from 'lucide-react';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BoardCanvas } from '@/components/board/BoardCanvas';
 import { useBoard, useSaveBoard } from '@/lib/api-boards';
 import { Toaster, toast } from 'sonner';
-import { applyNodeChanges, applyEdgeChanges, addEdge, OnNodesChange, OnEdgesChange, OnConnect, OnNodeClick } from '@xyflow/react';
+import { applyNodeChanges, applyEdgeChanges, addEdge, OnNodesChange, OnEdgesChange, OnConnect } from '@xyflow/react';
 import type { Node, Edge, NodeData } from '@shared/types';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,6 +20,18 @@ import html2canvas from 'html2canvas';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import * as Lucide from 'lucide-react';
+const iconOptions = [
+  { value: 'FileText', label: 'Text', icon: FileText },
+  { value: 'Users', label: 'Users', icon: Users },
+  { value: 'Code', label: 'Code', icon: Code },
+  { value: 'Sparkles', label: 'AI', icon: Sparkles },
+  { value: 'Share2', label: 'Connect', icon: Share2 },
+  { value: 'Move', label: 'Move', icon: Move },
+  { value: 'HelpCircle', label: 'Question', icon: HelpCircle },
+] as const;
 const DraggableNode = ({ type, label, icon: Icon }: { type: string; label: string; icon: React.ElementType }) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: `draggable-${type}` });
   const style = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined;
@@ -29,7 +41,7 @@ const DraggableNode = ({ type, label, icon: Icon }: { type: string; label: strin
       style={style}
       {...listeners}
       {...attributes}
-      className="p-3 border rounded-md flex items-center gap-2 cursor-grab active:cursor-grabbing bg-card hover:bg-accent"
+      className="p-3 border rounded-md flex items-center gap-2 cursor-grab active:cursor-grabbing bg-card hover:bg-accent transition-colors"
     >
       <Icon className="h-4 w-4" /> {label}
     </div>
@@ -44,7 +56,7 @@ export function BoardEditor() {
   const [edges, setEdges] = useState<Edge[]>([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [history, setHistory] = useState<{ nodes: Node[]; edges: Edge[] }[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [historyIndex, setHistoryIndex] = useState(0);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (board) {
@@ -55,29 +67,39 @@ export function BoardEditor() {
       setHistoryIndex(0);
     }
   }, [board]);
-  const updateHistory = (newNodes: Node[], newEdges: Edge[]) => {
+  const updateHistory = useCallback((newNodes: Node[], newEdges: Edge[]) => {
     const newHistoryEntry = { nodes: newNodes, edges: newEdges };
-    const newHistory = [...history.slice(0, historyIndex + 1), newHistoryEntry];
-    setHistory(newHistory.slice(-20)); // Limit history size
-    setHistoryIndex(newHistory.length - 1);
-  };
+    const currentHistory = history.slice(0, historyIndex + 1);
+    const updatedHistory = [...currentHistory, newHistoryEntry].slice(-20); // Limit history size
+    setHistory(updatedHistory);
+    setHistoryIndex(updatedHistory.length - 1);
+  }, [history, historyIndex]);
   const onNodesChange: OnNodesChange = useCallback((changes) => {
-    const newNodes = applyNodeChanges(changes, nodes);
-    setNodes(newNodes);
-    if (changes.some(c => c.type === 'remove' || c.type === 'position' && c.dragging === false)) {
-      updateHistory(newNodes, edges);
-    }
-  }, [nodes, edges, historyIndex, history]);
+    setNodes((nds) => {
+      const newNodes = applyNodeChanges(changes, nds) as Node[];
+      if (changes.some(c => c.type === 'remove' || (c.type === 'position' && c.dragging === false))) {
+        setEdges(eds => {
+          updateHistory(newNodes, eds);
+          return eds;
+        });
+      }
+      return newNodes;
+    });
+  }, [updateHistory]);
   const onEdgesChange: OnEdgesChange = useCallback((changes) => {
-    const newEdges = applyEdgeChanges(changes, edges);
-    setEdges(newEdges);
-    updateHistory(nodes, newEdges);
-  }, [nodes, edges, historyIndex, history]);
+    setEdges((eds) => {
+      const newEdges = applyEdgeChanges(changes, eds) as Edge[];
+      updateHistory(nodes, newEdges);
+      return newEdges;
+    });
+  }, [nodes, updateHistory]);
   const onConnect: OnConnect = useCallback((connection) => {
-    const newEdges = addEdge(connection, edges);
-    setEdges(newEdges);
-    updateHistory(nodes, newEdges);
-  }, [nodes, edges, historyIndex, history]);
+    setEdges((eds) => {
+      const newEdges = addEdge(connection, eds) as Edge[];
+      updateHistory(nodes, newEdges);
+      return newEdges;
+    });
+  }, [nodes, updateHistory]);
   const handleUndo = () => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
@@ -100,7 +122,7 @@ export function BoardEditor() {
       saveBoardMutation.mutate(updatedBoard);
     }
   };
-  const onNodeClick: OnNodeClick = useCallback((event, node) => {
+  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
   }, []);
   const updateSelectedNodeData = (data: Partial<NodeData>) => {
@@ -114,10 +136,11 @@ export function BoardEditor() {
   const handleDragEnd = (event: DragEndEvent) => {
     if (event.over && event.over.id === 'droppable-canvas' && reactFlowWrapper.current) {
       const { top, left } = reactFlowWrapper.current.getBoundingClientRect();
+      const pointerEvent = event.activatorEvent as PointerEvent;
       const newNode: Node = {
         id: uuidv4(),
         type: 'custom',
-        position: { x: event.activatorEvent.clientX - left - 75, y: event.activatorEvent.clientY - top - 25 },
+        position: { x: pointerEvent.clientX - left - 75, y: pointerEvent.clientY - top - 25 },
         data: { title: 'New Node', icon: 'FileText', content: 'Edit me!' },
       };
       const newNodes = [...nodes, newNode];
@@ -214,8 +237,10 @@ export function BoardEditor() {
               </div>
             </ResizablePanel>
             <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={65} id="droppable-canvas" ref={reactFlowWrapper}>
-              <BoardCanvas nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} />
+            <ResizablePanel defaultSize={65}>
+              <div id="droppable-canvas" ref={reactFlowWrapper} className="w-full h-full">
+                <BoardCanvas nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} />
+              </div>
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={20} minSize={15} maxSize={25} className="bg-background p-4">
@@ -225,11 +250,24 @@ export function BoardEditor() {
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-medium">Title</label>
-                      <Input value={selectedNode.data.title} onChange={e => updateSelectedNodeData({ title: e.target.value })} />
+                      <Input value={selectedNode.data.title || ''} onChange={e => updateSelectedNodeData({ title: e.target.value })} />
                     </div>
                     <div>
                       <label className="text-sm font-medium">Content</label>
                       <Textarea value={selectedNode.data.content || ''} onChange={e => updateSelectedNodeData({ content: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Icon</label>
+                      <Select value={selectedNode.data.icon} onValueChange={(v) => updateSelectedNodeData({ icon: v as keyof typeof Lucide })}>
+                        <SelectTrigger><SelectValue placeholder="Select an icon" /></SelectTrigger>
+                        <SelectContent>
+                          {iconOptions.map(({ value, label, icon: Icon }) => (
+                            <SelectItem key={value} value={value}>
+                              <div className="flex items-center gap-2"><Icon className="h-4 w-4" /> {label}</div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <label className="text-sm font-medium">Color</label>
@@ -273,4 +311,3 @@ function EditorSkeleton() {
     </div>
   );
 }
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';

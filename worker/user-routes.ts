@@ -55,18 +55,22 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     return ok(c, page);
   });
   app.post('/api/boards', async (c) => {
-    const { title } = (await c.req.json()) as { title?: string };
-    if (!title?.trim()) return bad(c, 'title is required');
-    const newBoard: Board = {
-      id: crypto.randomUUID(),
-      title: title.trim(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      nodes: [],
-      edges: [],
-    };
-    const created = await BoardEntity.create(c.env, newBoard);
-    return ok(c, created);
+    try {
+      const { title } = (await c.req.json()) as { title?: string };
+      if (!title?.trim()) return bad(c, 'title is required');
+      const newBoard: Board = {
+        id: crypto.randomUUID(),
+        title: title.trim(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        nodes: [],
+        edges: [],
+      };
+      const created = await BoardEntity.create(c.env, newBoard);
+      return ok(c, created);
+    } catch (e) {
+      return bad(c, 'Invalid request body');
+    }
   });
   app.get('/api/boards/:id', async (c) => {
     const id = c.req.param('id');
@@ -78,20 +82,28 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const id = c.req.param('id');
     const boardEntity = new BoardEntity(c.env, id);
     if (!await boardEntity.exists()) return notFound(c, 'Board not found');
-    const updates = (await c.req.json()) as Partial<Board>;
-    const updatedBoard = await boardEntity.mutate(s => ({
-      ...s,
-      ...updates,
-      id: s.id, // ensure id is not changed
-      createdAt: s.createdAt, // ensure createdAt is not changed
-      updatedAt: new Date().toISOString(),
-    }));
-    return ok(c, updatedBoard);
+    try {
+      const updates = (await c.req.json()) as Partial<Board>;
+      const updatedBoard = await boardEntity.mutate(s => ({
+        ...s,
+        ...updates,
+        id: s.id, // ensure id is not changed
+        createdAt: s.createdAt, // ensure createdAt is not changed
+        updatedAt: new Date().toISOString(),
+      }));
+      return ok(c, updatedBoard);
+    } catch (e) {
+      return bad(c, 'Invalid request body');
+    }
   });
   app.delete('/api/boards/:id', async (c) => {
     const id = c.req.param('id');
     const deleted = await BoardEntity.delete(c.env, id);
     return ok(c, { id, deleted });
+  });
+  app.post('/api/boards/seed', async (c) => {
+    await BoardEntity.ensureSeed(c.env);
+    return ok(c, { seeded: true });
   });
   // DELETE: Users
   app.delete('/api/users/:id', async (c) => ok(c, { id: c.req.param('id'), deleted: await UserEntity.delete(c.env, c.req.param('id')) }));
