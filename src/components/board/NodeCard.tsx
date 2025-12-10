@@ -3,7 +3,7 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import * as Lucide from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import type { Node, NodeData } from '@shared/types';
+import type { Node } from '@shared/types';
 import { motion } from 'framer-motion';
 const Icon = ({ name, ...props }: { name: keyof typeof Lucide } & Lucide.LucideProps) => {
   const LucideIcon = Lucide[name] as React.ComponentType<Lucide.LucideProps> | undefined;
@@ -12,7 +12,7 @@ const Icon = ({ name, ...props }: { name: keyof typeof Lucide } & Lucide.LucideP
   }
   return <LucideIcon {...props} />;
 };
-export function NodeCard({ data, selected, id }: NodeProps<Node<NodeData>>) {
+export function NodeCard({ data, selected, id }: NodeProps<Node>) {
   return (
     <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.1 }}>
       <Card

@@ -65,7 +65,7 @@ export function BoardCanvas({ nodes, edges, onNodesChange, onEdgesChange, onConn
       >
         <Background gap={30} />
         <Controls />
-        <MiniMap nodeStrokeWidth={3} zoomable pannable nodeColor={(node) => node.data?.color ?? 'hsl(var(--brand-primary))'} />
+        <MiniMap nodeStrokeWidth={3} zoomable pannable nodeColor={(node: Node) => (node.data?.color ?? 'hsl(var(--brand-primary))') as string} />
       </ReactFlow>
     </div>
   );
