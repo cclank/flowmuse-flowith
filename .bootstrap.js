@@ -78,7 +78,8 @@ function updateWranglerJsonc() {
 
 function runSetupCommands() {
     const commands = [
-    "bun add react-intersection-observer@^9.4.0"
+    "bun add react-intersection-observer@^9.4.0",
+    "bun install @xyflow/react"
 ];
     
     if (commands.length === 0) {
